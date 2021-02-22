@@ -28,7 +28,7 @@ class SensiboClientAPI(object):
         return result['result']
 
     def pod_historical_measurements(self, podUid, days=1):
-        result = self._get("/pods/%s/historicalMeasurements" % podUid, params={'days':days})
+        result = self._get("/pods/%s/historicalMeasurements" % podUid, params= {'days':days})
         return result['result']
 
     def pod_ac_state(self, podUid):
