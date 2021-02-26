@@ -7,11 +7,11 @@ import pickle
 import sys
 import data_mining.data_sources.sensibo_client as SC
 import asyncio
+import nest_asyncio
 from datetime import date, datetime, timedelta, timezone
 import pytz
 import sched
 import time
-import asyncio
 from pathlib import Path
 import os
 from uuid import uuid1
@@ -34,7 +34,9 @@ class Sensor():
         scheduled_time = self._get_first_scheduled_time()
         self.time_mining_started = scheduled_time
         end_mining_at = self.end_mining_at if self.end_mining_at else "Never"
+        
         print(f"{self.sensor_name} started mining | next scheduled measurement: {scheduled_time} | ending: {end_mining_at}")
+        
         while self.end_mining_at is None or scheduled_time < self.end_mining_at:
             time_now = datetime.now(tz=LOCAL_TIMEZONE)
             time_until_measurement = (
@@ -152,32 +154,37 @@ class TibberAPI(Sensor):
         except Exception as e:
             print(str(e))
             print("Tibber: could not connect.")
-        self._initialize_data_structure()
-        super().__init__()
 
-    async def _get_latest_measurement(self):
+        self._initialize_data_structure()
+
         for home in self.homes:
             try:
                 home.sync_update_info()
+                home_name = home.info['viewer']['home']['appNickname']
+                self.data['data'][home_name] = {
+                    'time': [],
+                    'consumption': [],
+                    'cost': [],
+                    'total_cost': []
+                }
             except Exception as e:
                 logging.error("Tibber: could not sync home info: " + str(e))
                 print("Tibber: could not sync home info")
                 print(str(e))
-                return False
+        super().__init__()
+
+    async def _get_latest_measurement(self):
+        for home in self.homes:
             # Settings
             home_name = home.info['viewer']['home']['appNickname']
             resolution = "HOURLY"
             n = 1
-            # Initialize data structure for each home
-            self.data['data'][home_name] = {
-                'time': [],
-                'consumption': [],
-                'cost': [],
-                'total_cost': []
-            }
+
             # Get data
             try:
-                historic_data = home.sync_get_historic_data(n, resolution)
+                # loop = asyncio.get_event_loop()
+                
+                historic_data = await home.get_historic_data(n, resolution)
                 for data_point in historic_data:
                     timestamp = datetime.strptime(data_point['from'], '%Y-%m-%dT%H:%M:%S%z')
                     self.data['data'][home_name]['time'].append(timestamp)

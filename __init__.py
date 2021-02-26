@@ -9,6 +9,7 @@ import asyncio
 import nest_asyncio
 nest_asyncio.apply()
 
+
 LOCAL_TIMEZONE = pytz.timezone('Europe/Oslo')
 DEFAULT = {
     "sampling_time": 60*60,
@@ -16,7 +17,6 @@ DEFAULT = {
     "end_backup_at": None,
     "max_backup_copies": 5
 }
-
 
 class DataMiner():
     '''
@@ -88,7 +88,7 @@ class DataMiner():
             self.run_backups = True
             print("Backup parameters not found, running with default backup params: run_backups=True, end_backup_at=None")
         
-        print("-----------------")
+        print("-------- DataMiner object initiated ---------")
 
 
     def start(self):
@@ -117,7 +117,7 @@ class DataMiner():
             if time_until_backup > 0:
                 await asyncio.sleep(time_until_backup)
             
-            backup_success = self._backup('data', 'backups')
+            backup_success = self._backup('data', backup_folder='backups')
             success_message = ""
             if backup_success:
                 success_message += f"BACKUP | {scheduled_time} | Success: backuped files in /backups/"
